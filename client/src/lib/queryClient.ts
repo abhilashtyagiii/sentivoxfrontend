@@ -1,10 +1,19 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
+}
+
+function buildUrl(path: string): string {
+  if (API_BASE_URL && !path.startsWith("http")) {
+    return `${API_BASE_URL}${path}`;
+  }
+  return path;
 }
 
 export async function apiRequest(
@@ -15,7 +24,8 @@ export async function apiRequest(
   // Handle FormData uploads differently
   const isFormData = data instanceof FormData;
   
-  const res = await fetch(url, {
+  const fullUrl = buildUrl(url);
+  const res = await fetch(fullUrl, {
     method,
     headers: isFormData ? {} : (data ? { "Content-Type": "application/json" } : {}),
     body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
@@ -32,7 +42,8 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const fullUrl = buildUrl(queryKey.join("/") as string);
+    const res = await fetch(fullUrl, {
       credentials: "include",
     });
 

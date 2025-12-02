@@ -1,6 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useLocation } from 'wouter';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
+function buildUrl(path: string): string {
+  if (API_BASE_URL && !path.startsWith("http")) {
+    return `${API_BASE_URL}${path}`;
+  }
+  return path;
+}
+
 interface User {
   id: string;
   email: string;
@@ -36,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsLoading(false);
           
           // Verify with server in background and handle invalid sessions
-          fetch('/api/auth/me', { credentials: 'include' })
+          fetch(buildUrl('/api/auth/me'), { credentials: 'include' })
             .then(async res => {
               if (res.ok) {
                 return res.json();
@@ -70,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // No stored user, check with server
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(buildUrl('/api/auth/me'), {
         credentials: 'include'
       });
 
@@ -97,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(buildUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -120,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('sentivox_user');
-    fetch('/api/auth/logout', {
+    fetch(buildUrl('/api/auth/logout'), {
       method: 'POST',
       credentials: 'include'
     }).catch(console.error);
